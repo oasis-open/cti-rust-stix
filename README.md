@@ -2,7 +2,7 @@
 
 ## OASIS TC Open Repository: cti-rust-stix
 
-This GitHub public repository [cti-rust-stix](https://github.com/oasis-open/<cti-rust-stix>/) was created at the request of the [CTI TC](https://groups.oasis-open.org/communities/tc-community-home2?CommunityKey=c6c33da0-d1ee-42dd-9427-018dc7d32277) as an [OASIS TC Open Repository](https://www.oasis-open.org/resources/open-repositories/) to support development of open source resources related to Technical Committee work.
+This GitHub public repository [cti-rust-stix](https://github.com/oasis-open/cti-rust-stix/) was created at the request of the [CTI TC](https://groups.oasis-open.org/communities/tc-community-home2?CommunityKey=c6c33da0-d1ee-42dd-9427-018dc7d32277) as an [OASIS TC Open Repository](https://www.oasis-open.org/resources/open-repositories/) to support development of open source resources related to Technical Committee work.
 
 While this TC Open Repository remains associated with the sponsor TC, its development priorities, leadership, intellectual property terms, participation rules, and other matters of governance are [separate and distinct](https://github.com/oasis-open/cti-rust-stix/blob/master/CONTRIBUTING.md) from the OASIS TC Process and related policies.
 
