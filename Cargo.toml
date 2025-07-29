@@ -1,0 +1,9 @@
+[workspace]
+
+# Use the newer, better feature resolver.
+#
+# In the future we'll be able to remove this, but for now without it Cargo
+# will default to the old resolver.
+resolver = "2"
+
+members = ["stix"]

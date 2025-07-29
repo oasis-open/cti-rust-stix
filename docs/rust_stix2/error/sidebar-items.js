@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["StixError"],"fn":["add_error","return_multiple_errors"]};

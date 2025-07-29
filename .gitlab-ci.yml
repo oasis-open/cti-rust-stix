@@ -1,0 +1,170 @@
+#============================================================================
+# Setup
+#----------------------------------------------------------------------------
+image: "rust:latest"
+
+workflow:
+  name: '$PIPELINE_NAME'
+  # Do not create pipelines for anything besides merge requests to main or dev and commits to main or dev
+  rules:
+    - if: '$NV_CI_SCHEDULE_NAME'
+      variables:
+        PIPELINE_NAME: "Scheduled $NV_CI_SCHEDULE_NAME pipeline on $CI_COMMIT_BRANCH"
+    
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"
+      variables:
+        PIPELINE_NAME: "Merge request pipeline for $CI_COMMIT_BRANCH"
+    
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH' 
+      variables:
+        PIPELINE_NAME: "Production pipeline on $CI_COMMIT_BRANCH"
+
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"' 
+      variables:
+        PIPELINE_NAME: "Development pipeline on $CI_COMMIT_BRANCH"
+    
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^*-ci/'
+      variables:
+        PIPELINE_NAME: "Test pipeline on $CI_COMMIT_BRANCH"
+
+stages:
+  - pre  
+  - build
+  - fmt
+  - lint
+  - test
+
+variables:
+  # Make sure Rust compilation errors give a full backtrace.
+  RUST_BACKTRACE: "FULL"
+  # Enable faster cache zipping.
+  FF_USE_FASTZIP: "true"
+  # Use the fastest cache compression available.
+  CACHE_COMPRESSION_LEVEL: "fastest"
+  # Explicitly set cargo target dir
+  CARGO_BUILD_TARGET_DIR: "${CI_PROJECT_DIR}/.target/"
+
+
+#============================================================================
+# Templates
+#----------------------------------------------------------------------------
+
+.cache: &global_cache
+  paths:
+    - ${CARGO_BUILD_TARGET_DIR}
+
+.tags: &tags
+  tags:
+    - ci
+
+.triggers:
+  rules:
+    - &on_mr 
+      if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_IID'
+    - &on_mr_if_src_changed 
+      <<: *on_mr
+      changes:
+        - Cargo.toml
+        - Cargo.lock
+        - stix/src/**/*.rs
+        - stix/src/**/Cargo.toml
+      when: on_success
+    - &on_main 
+      if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - &on_dev
+      if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"'
+    - &on_ci_test
+      if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH =~ /^*-ci/'
+
+
+.x86_64: &x86_64
+  variables:
+    CARGO_BUILD_TARGET: x86_64-unknown-linux-gnu
+    GOARCH: amd64
+    GOOS: linux
+
+
+# Installs MITRE cert
+
+# Runs cargo check.
+.build_template: &build
+  stage: build
+  cache:
+    <<: *global_cache
+    key: build-cache
+  before_script:
+    - if curl -k https://gitlab.mitre.org/mitre-scripts/mitre-pki/raw/master/tool_scripts/install_certs.sh > /tmp/install_certs.sh 2>/dev/null; then sh /tmp/install_certs.sh && rm -f /tmp/install_certs.sh; else echo "Not on the MII, skipping certificate install"; fi
+  script:
+    - rustc --version
+    - cargo --version
+    - cargo check --verbose --workspace
+
+# Runs rust-fmt.
+.fmt_template: &fmt
+  stage: fmt
+  cache:
+    <<: *global_cache
+    key: build-cache
+  script:
+    - rustc --version
+    - cargo --version
+    - rustup component add rustfmt
+    - cargo fmt --version
+    - cargo fmt --all -- --color=always --check
+
+# Runs clippy.
+.lint_template: &lint
+  stage: lint
+  cache:
+    <<: *global_cache
+    key: build-cache
+  script:
+    - rustc --version
+    - cargo --version
+    - rustup component add clippy
+    - cargo clippy --version
+    - cargo clippy --workspace --all-targets -- -D warnings
+
+# Runs the project's tests.
+.test_template: &test
+  stage: test
+  cache:
+    <<: *global_cache
+    key: test-cache
+  script:
+    - rustc --version
+    - cargo --version
+    - cargo test --workspace --verbose
+
+#============================================================================
+# Actions
+#----------------------------------------------------------------------------
+
+build:
+  <<: *build
+  <<: *tags
+  needs: []
+  rules:
+    - *on_mr
+
+fmt:
+  <<: *fmt
+  <<: *tags
+  needs: []
+  rules:
+    - *on_mr_if_src_changed
+
+lint:
+  <<: *lint
+  <<: *tags
+  needs: []
+  rules:
+    - *on_mr_if_src_changed
+
+test:
+  <<: *test
+  <<: *tags
+  needs: []
+  rules:
+    - *on_mr
+

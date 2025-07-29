@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["extension_definition","language_content","marking_definition"]};

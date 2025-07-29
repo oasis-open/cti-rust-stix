@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DomainObjectType"],"fn":["check_sdo_properties"],"struct":["DomainObject","DomainObjectBuilder"]};

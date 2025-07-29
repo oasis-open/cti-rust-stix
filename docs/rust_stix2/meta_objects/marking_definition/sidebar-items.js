@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MarkingTypes"],"struct":["MarkingDefinition","MarkingDefinitionBuilder","Statement","TLP"]};
